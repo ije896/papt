@@ -1,0 +1,19 @@
+DOC = dict of countries
+LOC = list of countries
+
+TODO:
+- gather multiple lists
+- create country dictionary
+- create country matching algorithm
+- explore various sorting methods (alternating front and back pop, using deque), which then creates duple
+- what about connections with more nodes? Truples?
+- explore drawing applications
+
+- different weights in lines for the varying disparities 
+- demarcate the median
+
+
+
+Label - firstHeading
+
+
