@@ -11,6 +11,7 @@ def _depickle(file):
 	infile = open(file, 'rb')
 	return pickle.load(infile)
 
+# solely to download the table from a website
 def scrape(url, label_col, rank_col, col_offset=2):
 	label_col -= 1
 	rank_col -= 1
