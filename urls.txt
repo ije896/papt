@@ -1,6 +1,10 @@
 https://en.wikipedia.org/wiki/List_of_countries_by_male_to_female_income_ratio
-
-
+1 4 1
 https://en.wikipedia.org/wiki/List_of_countries_by_population_(United_Nations)
-
+2 6 2
 https://en.wikipedia.org/wiki/List_of_countries_by_income_equality
+1 4 3
+https://en.wikipedia.org/wiki/List_of_countries_by_household_debt
+1 11 2
+https://en.wikipedia.org/wiki/List_of_countries_by_sex_ratio
+1 2 3

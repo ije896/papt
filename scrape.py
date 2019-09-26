@@ -1,6 +1,17 @@
 from bs4 import BeautifulSoup as bs
-import requests, pickle
+import requests, sys, time, pickle
+from urllib.request import urlopen
 
+sys.setrecursionlimit(500000)
+# solely to download and save tables from wiki in python-usable format
+# should handle multiple rank columns
+
+def dec(obj):
+	if isinstance(obj, list):
+		obj[:] = [r - 1 for r in obj]
+	else:
+		obj -= 1
+	return obj
 
 def _pickle(data, file):
 	of = open(file, 'wb')
@@ -11,69 +22,127 @@ def _depickle(file):
 	infile = open(file, 'rb')
 	return pickle.load(infile)
 
-# solely to download the table from a website
-def scrape(url, label_col, rank_col, col_offset=2):
-	label_col -= 1
-	rank_col -= 1
-	# col_offset = 2
-	
-	# fname = 'datasets/un_population' #should be label derived from website
-	# req = _depickle(fname)
 
-	req = requests.get(url)
-	#throw in error handling for request
+# a catalog of what data we want from the desired wiki table
+class tableLogger:
+	def __init__(self, label_col, rank_col, row_offset, table_offset=1):
+		self.label_col = dec(label_col)
+		self.rank_col = dec(rank_col)
+		self.row_offset = dec(row_offset)
+		self.table_offset = dec(table_offset)
 
-	soup = bs(req.content, 'html.parser')
+# gather just necessary columns from table
+def singleTableProcess(table, tablog):
+	# TODO:
+	# - tuple structure [country_id, rank]?
+	# - add more statistics, like weighted ratios
+	# - add iteration for multiple ranking columns
 
-	label = soup.find(id="firstHeading").text
-	fdir = 'datasets/'+label
-
-	print(label)
-
-	table = soup('table', {'class':'wikitable'})
-
-	rows = table[0]('tbody')[0]('tr')
+	rows = table('tbody')[0]('tr')
 
 	numrows = len(rows)
 
-	print(numrows)
-
-	# ('tr')[n+1'th country]('td')[1]('a')[0].text
-	# cname = soup('table', {'class':'wikitable'})[0]('tr')[2]('td')[1]('a')[0].text
 	clist = []
 	# cdict = {}
-	#uple structure [country_id, rank] #add more statistics, like weighted ratios
-	for n in range(col_offset, numrows):
-		cname = rows[n]('td')[label_col]('a')[0].text
-		crank = rows[n]('td')[rank_col].text.strip().replace(',' , '')
-		clist.append([cname, float(crank)])
-		# 
 
-	# clist.sort()
-	# clist = list(filter(None, clist))
-	_pickle(clist, fdir)
+	# REM: these are *technically* unsorted, which is useful for multiple rankings
+	for n in range(tablog.row_offset, numrows):
+		try:
+			cname = rows[n]('td')[tablog.label_col]('a')[0].text
+			crank = rows[n]('td')[tablog.rank_col].text.strip().replace(',' , '')
+		except IndexError:
+			break
+		if not (cname and crank):
+			continue
+		# print(cname, crank)
+		clist.append([cname, float(crank)])
 
 	return clist
 
 
-url = 'https://en.wikipedia.org/wiki/List_of_countries_by_population_(United_Nations)'
-# url = 'https://en.wikipedia.org/wiki/List_of_countries_by_male_to_female_income_ratio'
 
-# gather country names:
-c = scrape(url, 2, 6, 2)
+def reqandsavehtml(url):
+	req = requests.get(url)
+	soup = bs(req.content, 'html.parser')
+	tableTitle = soup.find(id="firstHeading").text
+	tables = soup('table', {'class':'wikitable'})
+	fname = tableTitle[21:] + " page.html"
+	fpath = 'html/' + fname
+	pickle(req, fpath)
+	return fpath
+
+def openandsoupifyhtml(file):
+	req = _depickle(file)
+	soup = bs(req.content, 'html.parser')
+	return soup
+
+# TODO:
+# this is the only time we need world 'accurate' columns?
+
+def scrape(url, tablog):
+	try:
+		req = requests.get(url)
+	except requests.exceptions.RequestException as e:
+		print(e + 'for url ' + url)
+		break
+
+	soup = bs(req.content, 'html.parser')
+	tableTitle = soup.find(id="firstHeading").text
+	tables = soup('table', {'class':'wikitable'})
+	table = tables[tablog.table_offset]
+
+	print("saving tables from page " + tableTitle + "...")
+
+	fname = tableTitle[21:] + " data"
+	fpath = 'pdatasets/' + fname
+
+
+	clist = singleTableProcess(table, tablog)
+	saveData = (clist, tablog)
+	sys.setrecursionlimit(50000)
+	_pickle(saveData, fpath)
+	return clist, fpath
+
+def scrapeURLFile(file):
+	print('Starting scrape of "'+file+'"')
+	infile = open(file, 'rb')
+	while True:
+		url = infile.readline().decode().strip()
+		nums = infile.readline().decode().split()
+		if not (url and nums): break #EOF
+		nums = [int(x) for x in nums]
+		tablog = tableLogger(*nums)
+		scrape(url, tablog)
+		time.sleep(1)
+	return
+
+
+def testHTML(file, tablog):
+	soup = openandsoupifyhtml(file)
+	tableTitle = soup.find(id="firstHeading").text
+	tables = soup('table', {'class':'wikitable'})
+	table = tables[0]
+
+	c = singleTableProcess(table, tablog)
+	return c
+
+
+# tablog = tableLogger(1, 4, 3)
+# clist, fnmae = scrape(url, tablog)
+# print(fnmae)
+# c = singleTableProcess(file)
 # c = scrape(url, 1, 4, 1)
 
+n = scrapeURLFile('single.txt')
 
-# a = _depickle('datasets/listofcountries')
-
-# cdict = {}
-
-# for n in range(0, len(a)):
-# 	cdict[a[n].lower()] = n
-
-
-# print(soup.findAll('a'))
+# tablog = tableLogger(1, 11, 1)
+#
+# # file = reqandsavehtml(url)
+#
+# file = 'html/household debt page.html'
+# c = testHTML(file, tablog)
 
 
+# q = _depickle('pdatasets/male to female income ratio tables')
 
-
+# print(n)

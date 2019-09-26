@@ -2,6 +2,8 @@ DOC = dict of countries
 LOC = list of countries
 
 TODO:
+- upon scrape request, we input most accurate col and offset data, so store it then
+
 - gather multiple lists
 - create country dictionary
 - create country matching algorithm
@@ -9,11 +11,13 @@ TODO:
 - what about connections with more nodes? Truples?
 - explore drawing applications
 
-- different weights in lines for the varying disparities 
+- different weights in lines for the varying disparities
 - demarcate the median
-
+- make the connections kinda rubbery, elastic
 
 
 Label - firstHeading
 
 
+
+https://en.wikipedia.org/wiki/Lists_of_countries_and_territories
