@@ -1,0 +1,9 @@
+head, body {
+ padding: 0;
+}
+
+#globalArea {
+    height: 400px;
+    width: 400px;
+    cursor: move;
+}
